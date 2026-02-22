@@ -1,0 +1,27 @@
+[package]
+name = "paste-it"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+gtk4 = "0.7.3"
+gdk4 = "0.7.3"
+gio = "0.18"
+rusqlite = { version = "0.29", features = ["bundled"] }
+sha2 = "0.10"
+image = { version = "0.24.7", default-features = false, features = ["png", "jpeg"] }
+chrono = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+hex = "0.4"
+anyhow = "1.0"
+tokio = { version = "1.36", features = ["full"] }
+x11 = "2.21"
+libc = "0.2"
+rayon = "=1.8.0"
+rayon-core = "=1.12.1"
+indexmap = "=2.2.6"
+lebe = "=0.5.2"
+gdk-pixbuf = "0.18"

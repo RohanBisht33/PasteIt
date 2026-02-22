@@ -1,0 +1,141 @@
+/* Windows 11 Light Theme - High Fidelity */
+window {
+    background-color: #f3f3f3;
+    color: #1a1a1a;
+    border-radius: 12px;
+    border: 1px solid #d0d0d0;
+}
+
+.popup-window {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.header-bar {
+    padding: 12px;
+    background-color: transparent;
+}
+
+.header-icon {
+    font-size: 18px;
+    color: #5f6368;
+    margin: 0 8px;
+    padding: 6px;
+    border-radius: 6px;
+}
+
+.header-icon.active {
+    color: #0067c0;
+    border-bottom: 2px solid #0067c0;
+    border-radius: 0;
+}
+
+.header-label {
+    font-family: "Segoe UI", "Inter", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 10px 16px;
+}
+
+.clear-button {
+    background-color: #ffffff;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    color: #1a1a1a;
+    font-size: 12px;
+    padding: 4px 12px;
+    font-weight: 500;
+}
+
+.clear-button:hover {
+    background-color: #f1f3f4;
+}
+
+/* Clipboard Item Card */
+.clip-card {
+    background-color: #ffffff;
+    margin: 4px 12px;
+    padding: 16px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.clip-card:hover {
+    border-color: #d0d0d0;
+}
+
+.clip-card:selected {
+    border: 1px solid #0067c0;
+    background-color: #f0f7ff;
+}
+
+.clip-text {
+    font-size: 14px;
+    color: #1a1a1a;
+    line-height: 1.5;
+}
+
+.clip-image {
+    border-radius: 4px;
+}
+
+.card-controls {
+    margin-left: 8px;
+}
+
+.card-icon-button {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 4px;
+    border-radius: 4px;
+    color: #5f6368;
+}
+
+.card-icon-button:hover {
+    background-color: #f1f3f4;
+}
+
+.card-icon-button.pinned {
+    background-color: #0067c0;
+    color: #ffffff;
+}
+
+.card-icon-button.pinned:hover {
+    background-color: #005aab;
+}
+
+.card-icon {
+    font-size: 16px;
+}
+
+/* Scrollbar Styling */
+scrollbar.vertical {
+    background-color: transparent;
+    width: 8px;
+}
+
+scrollbar.vertical slider {
+    background-color: #c1c1c1;
+    border-radius: 10px;
+    margin: 2px;
+}
+
+scrollbar.vertical slider:hover {
+    background-color: #a8a8a8;
+}
+
+list {
+    background-color: transparent;
+    padding-bottom: 12px;
+}
+
+row {
+    background-color: transparent;
+}
+
+row:hover,
+row:selected {
+    background-color: transparent;
+}
