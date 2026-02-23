@@ -315,7 +315,7 @@ impl ClipboardUI {
                 let controls_box = Box::new(Orientation::Vertical, 0);
                 controls_box.set_css_classes(&["card-controls"]);
                 
-                let menu_btn = Button::builder().label("⋮").has_frame(false).build();
+                let menu_btn = Button::builder().label("🗑️").has_frame(false).build();
                 menu_btn.set_css_classes(&["card-icon-button"]);
                 
                 let pin_label = if entry.pinned { "📍" } else { "📌" };

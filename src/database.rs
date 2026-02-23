@@ -88,7 +88,7 @@ impl Database {
             params_vec.push(format!("%{}%", s));
         }
         
-        query.push_str(" ORDER BY pinned DESC, timestamp DESC LIMIT 500");
+        query.push_str(" ORDER BY timestamp DESC LIMIT 500");
 
         let conn = self.conn.lock().map_err(|_| anyhow!("Failed to lock DB"))?;
         let mut stmt = conn.prepare(&query)?;
