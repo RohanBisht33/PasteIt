@@ -29,6 +29,7 @@ If you are on **Ubuntu 24.04 (X11)**, you can install Paste!t in seconds using t
 
 ### Option A: via Git
 ```bash
+sudo apt update && sudo apt install -y git
 git clone https://github.com/RohanBisht33/PasteIt.git
 cd PasteIt
 chmod +x install.sh
