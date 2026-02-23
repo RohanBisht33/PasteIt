@@ -32,6 +32,7 @@ fi
 # Create local bin if it doesn't exist
 mkdir -p ~/.local/bin
 cp target/release/paste-it ~/.local/bin/
+chmod +x ~/.local/bin/paste-it
 
 echo "📦 Setting up systemd service..."
 mkdir -p ~/.config/systemd/user/
