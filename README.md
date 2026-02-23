@@ -27,12 +27,23 @@
 
 If you are on **Ubuntu 24.04 (X11)**, you can install Paste!t in seconds using the pre-built binary:
 
+### Option A: via Git
 ```bash
 git clone https://github.com/RohanBisht33/PasteIt.git
 cd PasteIt
 chmod +x install.sh
 ./install.sh
 ```
+
+### Option B: Download ZIP (No Git needed)
+1.  **Download**: Click the green **Code** button on GitHub and select **Download ZIP**.
+2.  **Extract**: Right-click the folder and select **Extract Here**.
+3.  **Install**:
+    ```bash
+    cd PasteIt-main
+    chmod +x install.sh
+    ./install.sh
+    ```
 *The installer automatically detects the pre-built binary (14MB) and skips the 5-minute compilation!*
 
 ---
