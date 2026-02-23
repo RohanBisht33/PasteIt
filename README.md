@@ -55,7 +55,7 @@ If you prefer to build it yourself or are on a different Debian-based distro:
 1. **Install Dependencies**:
    ```bash
    sudo apt update
-   sudo apt install -y cargo rustc libgtk-4-dev xdotool xprop sqlite3 libsqlite3-dev pkg-config
+   sudo apt install -y git cargo rustc libgtk-4-dev xdotool xprop sqlite3 libsqlite3-dev pkg-config
    ```
 
 2. **Build and Install**:
