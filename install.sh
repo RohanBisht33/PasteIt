@@ -6,8 +6,9 @@
 set -e
 
 echo "🔍 Checking dependencies..."
-sudo apt update
-sudo apt install -y cargo rustc libgtk-4-dev xdotool x11-utils sqlite3 libsqlite3-dev pkg-config
+# Ignore errors if some 3rd party repos have GPG issues
+sudo apt update || echo "⚠️ Warning: apt update had some errors, trying to proceed..."
+sudo apt install -y cargo rustc libgtk-4-dev xdotool x11-utils sqlite3 libsqlite3-dev pkg-config || echo "⚠️ Warning: Some packages failed to install. If dependencies are already met, the build may still work."
 
 # Priority 1: Check for repo-provided pre-built binary
 if [ -f "./bin/paste-it" ]; then
