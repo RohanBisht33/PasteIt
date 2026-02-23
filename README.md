@@ -23,28 +23,33 @@
 
 ---
 
-## 🛠 Prerequisites
+## ⚡ Quick Install (Recommended)
 
-Ensure you have the following tools installed on your Ubuntu system:
+If you are on **Ubuntu 24.04 (X11)**, you can install Paste!t in seconds using the pre-built binary:
 
 ```bash
-sudo apt update
-sudo apt install -y cargo rustc libgtk-4-dev xdotool xprop sqlite3 libsqlite3-dev pkg-config
+git clone https://github.com/RohanBisht33/PasteIt.git
+cd PasteIt
+chmod +x install.sh
+./install.sh
 ```
+*The installer automatically detects the pre-built binary (14MB) and skips the 5-minute compilation!*
 
 ---
 
-## ⚙️ Installation
+## 🛠 Manual Installation (Build from Source)
 
-1. **Clone and Build**:
+If you prefer to build it yourself or are on a different Debian-based distro:
+
+1. **Install Dependencies**:
    ```bash
-   git clone https://github.com/RohanBisht33/PasteIt.git
-   cd PasteIt
-   cargo build --release
+   sudo apt update
+   sudo apt install -y cargo rustc libgtk-4-dev xdotool xprop sqlite3 libsqlite3-dev pkg-config
    ```
 
-2. **Install to Local Bin**:
+2. **Build and Install**:
    ```bash
+   cargo build --release
    mkdir -p ~/.local/bin
    cp target/release/paste-it ~/.local/bin/
    ```

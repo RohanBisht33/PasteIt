@@ -1,11 +1,32 @@
 #!/bin/bash
 
 # Paste!t Installer for Ubuntu 24.04 X11
+# Optimizes for build time and setup speed.
 
 set -e
 
-echo "🚀 Building Paste!t..."
-cargo build --release
+echo "🔍 Checking dependencies..."
+sudo apt update
+sudo apt install -y cargo rustc libgtk-4-dev xdotool x11-utils sqlite3 libsqlite3-dev pkg-config
+
+# Priority 1: Check for repo-provided pre-built binary
+if [ -f "./bin/paste-it" ]; then
+    echo "✨ Pre-built binary found (14MB). Installing instantly..."
+    SKIP_BUILD=true
+    mkdir -p target/release/
+    cp ./bin/paste-it ./target/release/
+# Priority 2: Check for locally built binary
+elif [ -f "./target/release/paste-it" ]; then
+    read -p "🔄 Locally built binary found. Use it to skip build? (y/n) " use_prebuilt
+    if [[ "$use_prebuilt" == "y" ]]; then
+        SKIP_BUILD=true
+    fi
+fi
+
+if [ "$SKIP_BUILD" != true ]; then
+    echo "⚡ Building Paste!t from source (this may take 3-5 minutes)..."
+    cargo build --release
+fi
 
 # Create local bin if it doesn't exist
 mkdir -p ~/.local/bin
@@ -30,7 +51,7 @@ EOF
 
 systemctl --user daemon-reload
 systemctl --user enable paste-it.service
-systemctl --user start paste-it.service
+systemctl --user restart paste-it.service
 
 echo "⌨️ Configuring Super+V shortcut..."
 PATH_BASE="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/paste-it/"
