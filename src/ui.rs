@@ -46,11 +46,22 @@ impl ClipboardUI {
 
             window.set_css_classes(&["popup-window"]);
             
-            // X11 Positioning (Fixed)
+            // Flicker-free Positioning: Start invisible
+            window.set_opacity(0.0);
             window.present();
+
             let title = "Clipboard history";
+            let (show_tx, show_rx) = gtk4::glib::MainContext::channel(gtk4::glib::Priority::DEFAULT);
+            let window_reveal = window.clone();
+            show_rx.attach(None, move |_| {
+                window_reveal.set_opacity(1.0);
+                gtk4::glib::ControlFlow::Break
+            });
+
             std::thread::spawn(move || {
-                std::thread::sleep(std::time::Duration::from_millis(150));
+                // Wait just enough for the window manager to realize the window
+                std::thread::sleep(std::time::Duration::from_millis(60));
+                
                 let display = Display::default().expect("Could not get default display");
                 let monitors = display.monitors();
                 if let Some(monitor) = monitors.item(0).and_then(|m| m.downcast::<gdk4::Monitor>().ok()) {
@@ -58,6 +69,7 @@ impl ClipboardUI {
                     let x = geometry.width() - 400 - 20; 
                     let y = geometry.height() - 600 - 60; 
 
+                    // 1. Position the window while it's still invisible
                     let _ = std::process::Command::new("xdotool")
                         .arg("search")
                         .arg("--name")
@@ -67,6 +79,7 @@ impl ClipboardUI {
                         .arg(format!("{}", y))
                         .status();
                     
+                    // 2. Set X11 floating hints
                     let _ = std::process::Command::new("xprop")
                         .arg("-name")
                         .arg(title)
@@ -77,6 +90,9 @@ impl ClipboardUI {
                         .arg("_NET_WM_STATE")
                         .arg("_NET_WM_STATE_SKIP_TASKBAR,_NET_WM_STATE_SKIP_PAGER,_NET_WM_STATE_ABOVE")
                         .status();
+
+                    // 3. Signal main thread to reveal the window
+                    let _ = show_tx.send(());
                 }
             });
 
