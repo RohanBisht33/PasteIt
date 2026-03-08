@@ -19,6 +19,10 @@ const SOCKET_PATH: &str = "/tmp/paste_it.sock";
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = env::args().collect();
     let db = Arc::new(Database::new()?);
+    
+    // Trigger cleanup on startup
+    let _ = db.cleanup();
+    
     let daemon = Arc::new(Daemon::new(db.clone()));
 
     gtk4::init().expect("Failed to initialize GTK");

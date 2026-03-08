@@ -245,12 +245,11 @@ impl ClipboardUI {
                     daemon_action.set_last_injected_hash(hash.clone());
 
                     // 2. Set clipboard via Daemon (for persistence)
-                    if entry_type == "text" {
-                        use std::os::unix::net::UnixStream;
-                        use std::io::Write;
-                        if let Ok(mut stream) = UnixStream::connect("/tmp/paste_it_daemon.sock") {
-                            let _ = stream.write_all(format!("SET:{}", hash).as_bytes());
-                        }
+                    use std::os::unix::net::UnixStream;
+                    use std::io::Write;
+                    if let Ok(mut stream) = UnixStream::connect("/tmp/paste_it_daemon.sock") {
+                        let _ = stream.write_all(format!("SET:{}", hash).as_bytes());
+                        let _ = stream.shutdown(std::net::Shutdown::Write);
                     }
 
                     // 3. HIDE & RESTORE FOCUS (Improved Sequence)

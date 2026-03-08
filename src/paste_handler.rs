@@ -23,11 +23,19 @@ impl PasteHandler {
         // 1. Restore focus immediately
         let _ = Command::new("xdotool")
             .arg("windowactivate")
+            .arg("--sync")
             .arg(window_id)
             .status()?;
 
-        // 2. Wait 300ms for focus to settle (More robust for Linux)
-        thread::sleep(Duration::from_millis(300));
+        // 2. Ensure window is focused
+        let _ = Command::new("xdotool")
+            .arg("windowfocus")
+            .arg("--sync")
+            .arg(window_id)
+            .status()?;
+
+        // 3. Wait a bit for focus to settle
+        thread::sleep(Duration::from_millis(150));
 
         // 3. Inject Ctrl+V with --clearmodifiers to ignore the Super key
         let _ = Command::new("xdotool")

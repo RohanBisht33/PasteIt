@@ -139,9 +139,10 @@ impl Database {
         Ok(())
     }
 
-    fn cleanup(&self) -> anyhow::Result<()> {
-        // User requested cleanup logic: Delete unpinned beyond 500 limit
+    pub fn cleanup(&self) -> anyhow::Result<()> {
         let conn = self.conn.lock().map_err(|_| anyhow!("Failed to lock DB"))?;
+        
+        // 1. Delete unpinned beyond 500 limit
         conn.execute(
             "DELETE FROM entries
              WHERE pinned = 0
@@ -151,7 +152,16 @@ impl Database {
                  LIMIT 500
              )",
             [],
-        ).context("Failed to cleanup database")?;
+        ).context("Failed to cleanup limit")?;
+
+        // 2. Delete unpinned older than 24 hours
+        conn.execute(
+            "DELETE FROM entries
+             WHERE pinned = 0
+             AND timestamp < datetime('now', '-1 day')",
+            [],
+        ).context("Failed to cleanup old entries")?;
+
         Ok(())
     }
 }
