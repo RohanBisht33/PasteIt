@@ -6,9 +6,20 @@
 set -e
 
 echo "🔍 Checking dependencies..."
-# Ignore errors if some 3rd party repos have GPG issues
+# Use a more robust check for apt updates, ignoring errors that don't affect our needs
+set +e
 sudo apt update || echo "⚠️ Warning: apt update had some errors, trying to proceed..."
-sudo apt install -y git cargo rustc libgtk-4-dev xdotool x11-utils sqlite3 libsqlite3-dev pkg-config || echo "⚠️ Warning: Some packages failed to install. If dependencies are already met, the build may still work."
+# Use a list of packages and check them individually or ignore failure to continue if possible
+PACKAGES="git cargo rustc libgtk-4-dev xdotool x11-utils sqlite3 libsqlite3-dev pkg-config"
+for pkg in $PACKAGES; do
+    if dpkg -s "$pkg" >/dev/null 2>&1; then
+        echo "✅ $pkg is already installed."
+    else
+        echo "📥 Installing $pkg..."
+        sudo apt install -y "$pkg" || echo "⚠️ Failed to install $pkg, trying to continue..."
+    fi
+done
+set -e
 
 # Priority 1: Check for repo-provided pre-built binary
 if [ -f "./bin/paste-it" ]; then
