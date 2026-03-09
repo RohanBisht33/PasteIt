@@ -123,23 +123,21 @@ impl Daemon {
     }
 
     pub fn set_clipboard_from_db(&self, hash: String) {
-        if let Ok(history) = self.db.get_history(None) {
-            if let Some(entry) = history.into_iter().find(|e| e.content_hash == hash) {
-                let display = gdk4::Display::default().expect("No display");
-                let clipboard = display.clipboard();
-                self.set_last_injected_hash(hash);
+        if let Ok(Some(entry)) = self.db.get_entry_by_hash(&hash) {
+            let display = gdk4::Display::default().expect("No display");
+            let clipboard = display.clipboard();
+            self.set_last_injected_hash(hash);
 
-                if entry.entry_type == "text" {
-                    let text = String::from_utf8_lossy(&entry.content).to_string();
-                    clipboard.set_text(&text);
-                } else if entry.entry_type == "image" {
-                    let loader = gdk_pixbuf::PixbufLoader::new();
-                    if let Ok(_) = loader.write(&entry.content) {
-                        let _ = loader.close();
-                        if let Some(pixbuf) = loader.pixbuf() {
-                            let texture = gdk4::Texture::for_pixbuf(&pixbuf);
-                            clipboard.set_texture(&texture);
-                        }
+            if entry.entry_type == "text" {
+                let text = String::from_utf8_lossy(&entry.content).to_string();
+                clipboard.set_text(&text);
+            } else if entry.entry_type == "image" {
+                let loader = gdk_pixbuf::PixbufLoader::new();
+                if let Ok(_) = loader.write(&entry.content) {
+                    let _ = loader.close();
+                    if let Some(pixbuf) = loader.pixbuf() {
+                        let texture = gdk4::Texture::for_pixbuf(&pixbuf);
+                        clipboard.set_texture(&texture);
                     }
                 }
             }

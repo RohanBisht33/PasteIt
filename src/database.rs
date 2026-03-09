@@ -112,6 +112,30 @@ impl Database {
         Ok(result)
     }
 
+    pub fn get_entry_by_hash(&self, hash: &str) -> anyhow::Result<Option<ClipboardEntry>> {
+        let query = "SELECT id, content, thumbnail, type, content_hash, timestamp, pinned FROM entries WHERE content_hash = ?1";
+        let conn = self.conn.lock().map_err(|_| anyhow!("Failed to lock DB"))?;
+        let mut stmt = conn.prepare(query)?;
+        
+        let mut entries = stmt.query_map(params![hash], |row| {
+            Ok(ClipboardEntry {
+                id: row.get(0)?,
+                content: row.get(1)?,
+                thumbnail: row.get(2)?,
+                entry_type: row.get(3)?,
+                content_hash: row.get(4)?,
+                timestamp: row.get(5)?,
+                pinned: row.get(6)?,
+            })
+        })?;
+
+        if let Some(entry) = entries.next() {
+            Ok(Some(entry?))
+        } else {
+            Ok(None)
+        }
+    }
+
     pub fn toggle_pin(&self, id: i64) -> anyhow::Result<()> {
         let conn = self.conn.lock().map_err(|_| anyhow!("Failed to lock DB"))?;
         conn.execute(

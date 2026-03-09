@@ -62,7 +62,10 @@ fn run_daemon(daemon: Arc<Daemon>) {
                     if let Ok(_) = stream.read_to_string(&mut buffer) {
                         if buffer.starts_with("SET:") {
                             let hash = buffer[4..].to_string();
-                            daemon_socket.set_clipboard_from_db(hash);
+                            let d = daemon_socket.clone();
+                            gtk4::glib::MainContext::default().spawn_local(async move {
+                                d.set_clipboard_from_db(hash);
+                            });
                         }
                     }
                 }
