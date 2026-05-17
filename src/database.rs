@@ -163,28 +163,33 @@ impl Database {
         Ok(())
     }
 
+    /// Called on startup: removes ALL unpinned entries (session cleanup).
+    /// Pinned entries are never touched.
+    pub fn cleanup_on_startup(&self) -> anyhow::Result<()> {
+        let conn = self.conn.lock().map_err(|_| anyhow!("Failed to lock DB"))?;
+        conn.execute(
+            "DELETE FROM entries WHERE pinned = 0",
+            [],
+        ).context("Failed to clear unpinned entries on startup")?;
+        Ok(())
+    }
+
+    /// Called after each insert: trims session to 500 most-recent unpinned entries.
     pub fn cleanup(&self) -> anyhow::Result<()> {
         let conn = self.conn.lock().map_err(|_| anyhow!("Failed to lock DB"))?;
-        
-        // 1. Delete unpinned beyond 500 limit
+
+        // Keep only the 500 most-recent unpinned entries
         conn.execute(
             "DELETE FROM entries
              WHERE pinned = 0
              AND id NOT IN (
                  SELECT id FROM entries
+                 WHERE pinned = 0
                  ORDER BY timestamp DESC
                  LIMIT 500
              )",
             [],
         ).context("Failed to cleanup limit")?;
-
-        // 2. Delete unpinned older than 24 hours
-        conn.execute(
-            "DELETE FROM entries
-             WHERE pinned = 0
-             AND timestamp < datetime('now', '-1 day')",
-            [],
-        ).context("Failed to cleanup old entries")?;
 
         Ok(())
     }

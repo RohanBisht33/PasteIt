@@ -1,141 +1,138 @@
-/* Windows 11 Light Theme - High Fidelity */
-window {
-    background-color: #f3f3f3;
-    color: #1a1a1a;
+/* ── Paste!t — Windows 11 Premium Dark Theme ──────────────────────────────── */
+
+/* Root window */
+window.popup-window {
+    background-color: #1c1c1c; /* Windows 11 Mica-like dark */
+    color: #ffffff;
     border-radius: 12px;
-    border: 1px solid #d0d0d0;
+    border: 1px solid #333333;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
-.popup-window {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-}
-
+/* Header Bar (Draggable area) */
 .header-bar {
-    padding: 12px;
-    background-color: transparent;
+    background: transparent;
+    min-height: 8px;
+    padding: 0;
 }
 
-.header-icon {
-    font-size: 18px;
-    color: #5f6368;
-    margin: 0 8px;
-    padding: 6px;
-    border-radius: 6px;
-}
-
-.header-icon.active {
-    color: #0067c0;
-    border-bottom: 2px solid #0067c0;
-    border-radius: 0;
-}
-
+/* Header Label */
 .header-label {
-    font-family: "Segoe UI", "Inter", sans-serif;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
-    color: #1a1a1a;
-    margin: 10px 16px;
+    color: #eeeeee;
+    margin-left: 4px;
 }
 
+/* Clear All Button */
 .clear-button {
-    background-color: #ffffff;
-    border: 1px solid #d0d0d0;
-    border-radius: 4px;
-    color: #1a1a1a;
-    font-size: 12px;
+    background: #2d2d2d;
+    color: #4cc2ff; /* Windows 11 accent-like blue */
+    border: 1px solid #3d3d3d;
+    border-radius: 6px;
     padding: 4px 12px;
+    font-size: 12px;
     font-weight: 500;
+    transition: all 0.2s ease;
 }
 
 .clear-button:hover {
-    background-color: #f1f3f4;
+    background: #3d3d3d;
+    color: #7fd4ff;
 }
 
-/* Clipboard Item Card */
+/* Scrolled Window */
+scrolledwindow {
+    background: transparent;
+    margin: 4px 0;
+}
+
+/* Clip List Box */
+listbox {
+    background: transparent;
+    border: none;
+}
+
+/* Individual Clip Card */
 .clip-card {
-    background-color: #ffffff;
-    margin: 4px 12px;
-    padding: 16px;
-    border-radius: 6px;
-    border: 1px solid transparent;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    background: #2b2b2b;
+    border: 1px solid #353535;
+    border-radius: 8px;
+    margin: 6px 12px;
+    padding: 12px;
+    transition: transform 0.1s ease, background 0.2s ease;
 }
 
 .clip-card:hover {
-    border-color: #d0d0d0;
+    background: #323232;
+    border-color: #454545;
 }
 
-.clip-card:selected {
-    border: 1px solid #0067c0;
-    background-color: #f0f7ff;
-}
-
-.clip-text {
-    font-size: 14px;
-    color: #1a1a1a;
-    line-height: 1.5;
-}
-
-.clip-image {
-    border-radius: 4px;
-}
-
-.card-controls {
-    margin-left: 8px;
-}
-
-.card-icon-button {
+/* Selected Row in GTK */
+listbox row:selected {
     background: transparent;
-    border: none;
-    box-shadow: none;
+    outline: none;
+}
+
+listbox row:selected .clip-card {
+    background: #383838;
+    border-color: #4cc2ff;
+}
+
+/* Text in Clips */
+.clip-text {
+    color: #e0e0e0;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* Image in Clips */
+.clip-image {
+    border-radius: 6px;
+    border: 1px solid #444444;
+}
+
+/* Controls Box (Right side) */
+.card-controls {
+    margin-left: 12px;
+}
+
+/* Action Buttons */
+.action-btn {
+    color: #888888;
     padding: 4px;
+    min-width: 28px;
+    min-height: 28px;
+    font-size: 14px;
     border-radius: 4px;
-    color: #5f6368;
+    transition: all 0.2s ease;
 }
 
-.card-icon-button:hover {
-    background-color: #f1f3f4;
-}
-
-.card-icon-button.pinned {
-    background-color: #0067c0;
+.action-btn:hover {
+    background: #404040;
     color: #ffffff;
 }
 
-.card-icon-button.pinned:hover {
-    background-color: #005aab;
+.pin-btn.pinned {
+    color: #4cc2ff;
 }
 
-.card-icon {
-    font-size: 16px;
+.delete-btn:hover {
+    color: #ff5f5f;
 }
 
-/* Scrollbar Styling */
+/* Custom Scrollbar */
 scrollbar.vertical {
-    background-color: transparent;
-    width: 8px;
+    background: transparent;
+    width: 6px;
 }
 
 scrollbar.vertical slider {
-    background-color: #c1c1c1;
+    background: #444444;
     border-radius: 10px;
-    margin: 2px;
+    min-height: 40px;
 }
 
 scrollbar.vertical slider:hover {
-    background-color: #a8a8a8;
-}
-
-list {
-    background-color: transparent;
-    padding-bottom: 12px;
-}
-
-row {
-    background-color: transparent;
-}
-
-row:hover,
-row:selected {
-    background-color: transparent;
+    background: #666666;
 }

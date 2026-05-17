@@ -7,8 +7,7 @@ use std::sync::Arc;
 use gdk4::Display;
 use std::collections::HashMap;
 use std::sync::Mutex;
-use sha2::{Digest, Sha256};
-use gtk4::glib::Receiver;
+use gtk4::glib::clone;
 
 pub struct ClipboardUI {
     db: Arc<Database>,
@@ -20,17 +19,17 @@ impl ClipboardUI {
         ClipboardUI { db, daemon }
     }
 
-    pub fn run(&self, prev_window_id: Option<String>, toggle_rx: Receiver<()>) {
+    pub fn run(&self, prev_window_id: Option<String>, toggle_rx: async_channel::Receiver<()>) {
         let app = gtk4::Application::builder()
             .application_id("com.paste.it.ui")
             .build();
 
         let db = self.db.clone();
-        let daemon = self.daemon.clone();
+        let _daemon = self.daemon.clone(); // kept for future use / struct symmetry
         let row_map = Arc::new(Mutex::new(HashMap::new()));
         let prev_id = prev_window_id.clone();
 
-        let toggle_rx = Arc::new(Mutex::new(Some(toggle_rx)));
+        let toggle_rx = Arc::new(Mutex::new(Some(toggle_rx))); // async_channel::Receiver<()>
 
         app.connect_activate(move |app| {
             let toggle_rx_inner = toggle_rx.lock().unwrap().take();
@@ -44,19 +43,20 @@ impl ClipboardUI {
                 .focusable(true)
                 .build();
 
-            window.set_css_classes(&["popup-window"]);
+            window.set_css_classes(&["popup-window", "dark"]);
             
             // Flicker-free Positioning: Start invisible
             window.set_opacity(0.0);
             window.present();
 
             let title = "Clipboard history";
-            let (show_tx, show_rx) = gtk4::glib::MainContext::channel(gtk4::glib::Priority::DEFAULT);
+            let (show_tx, show_rx) = async_channel::bounded::<()>(1);
             let window_reveal = window.clone();
-            show_rx.attach(None, move |_| {
-                window_reveal.set_opacity(1.0);
-                gtk4::glib::ControlFlow::Break
-            });
+            gtk4::glib::MainContext::default().spawn_local(clone!(@strong show_rx => async move {
+                if show_rx.recv().await.is_ok() {
+                    window_reveal.set_opacity(1.0);
+                }
+            }));
 
             std::thread::spawn(move || {
                 // Wait just enough for the window manager to realize the window
@@ -92,25 +92,15 @@ impl ClipboardUI {
                         .status();
 
                     // 3. Signal main thread to reveal the window
-                    let _ = show_tx.send(());
+                    let _ = show_tx.send_blocking(());
                 }
             });
 
             let vbox = Box::new(Orientation::Vertical, 0);
 
-            // 1. Icon Header Bar
+            // 1. Drag handle bar (no emojis — just a clean draggable strip)
             let header_bar = Box::new(Orientation::Horizontal, 0);
             header_bar.set_css_classes(&["header-bar"]);
-            
-            let icons = ["🕒", "😊", "🖼️", "😉", "🔣", "📋"];
-            for (i, icon_text) in icons.iter().enumerate() {
-                let icon_lbl = Label::new(Some(icon_text));
-                icon_lbl.set_css_classes(&["header-icon"]);
-                if i == 5 { // Clipboard is active
-                    icon_lbl.add_css_class("active");
-                }
-                header_bar.append(&icon_lbl);
-            }
             vbox.append(&header_bar);
 
             // 2. Drag Gesture for Header
@@ -181,13 +171,6 @@ impl ClipboardUI {
                 }
             });
 
-            let (close_tx, close_rx) = gtk4::glib::MainContext::channel::<()>(gtk4::glib::Priority::DEFAULT);
-            let window_close_sig = window.clone();
-            close_rx.attach(None, move |_| {
-                window_close_sig.close();
-                gtk4::glib::ControlFlow::Break
-            });
-
             window.set_child(Some(&vbox));
 
             // Populate list
@@ -223,9 +206,7 @@ impl ClipboardUI {
             let window_action = window.clone();
             let prev_id_action = prev_id.clone();
             let row_map_action = row_map.clone();
-            let daemon_action = daemon.clone();
 
-            let close_tx_move = close_tx.clone();
             list_box.connect_row_activated(move |_, row| {
                 let index = row.index();
                 let entry_data = {
@@ -234,40 +215,16 @@ impl ClipboardUI {
                 };
 
                 if let Some(entry) = entry_data {
-                    let entry_type = entry.entry_type.clone();
-                    let content = entry.content.clone();
-                    
-                    // 1. Generate hash and set in daemon BEFORE clipboard set
-                    let mut hasher = Sha256::new();
-                    hasher.update(&content);
-                    hasher.update(entry_type.as_bytes());
-                    let hash = hex::encode(hasher.finalize());
-                    daemon_action.set_last_injected_hash(hash.clone());
+                    // Close the UI window first so focus can return to the target
+                    window_action.close();
 
-                    // 2. Set clipboard via Daemon (for persistence)
-                    use std::os::unix::net::UnixStream;
-                    use std::io::Write;
-                    if let Ok(mut stream) = UnixStream::connect("/tmp/paste_it_daemon.sock") {
-                        let _ = stream.write_all(format!("SET:{}", hash).as_bytes());
-                        let _ = stream.shutdown(std::net::Shutdown::Write);
-                    }
-
-                    // 3. HIDE & RESTORE FOCUS (Improved Sequence)
-                    window_action.hide();
-                    
-                    if let Some(id) = &prev_id_action {
-                        let id_clone = id.clone();
-                        let tx = close_tx_move.clone();
-                        std::thread::spawn(move || {
-                            // 1. Wait for window to unmap
-                            std::thread::sleep(std::time::Duration::from_millis(100));
-                            // 2. Restore focus and Paste
-                            let _ = PasteHandler::paste(&id_clone);
-                            // 3. Signal main thread to close
-                            let _ = tx.send(());
-                        });
-                    } else {
-                        window_action.close();
+                    // Send the hash + target window ID to the daemon.
+                    // The daemon will: set clipboard → wait 80ms → activate target
+                    // window → inject Ctrl+V. This ensures we paste the correct
+                    // entry (by hash) rather than whatever is most-recently set.
+                    let wid = prev_id_action.as_deref();
+                    if let Err(e) = PasteHandler::send_set_command(&entry.content_hash, wid) {
+                        eprintln!("send_set_command error: {}", e);
                     }
                 }
             });
@@ -275,9 +232,10 @@ impl ClipboardUI {
             // Handle Toggle Signal
             if let Some(rx) = toggle_rx_inner {
                 let window_toggle = window.clone();
-                rx.attach(None, move |_| {
-                    window_toggle.close();
-                    gtk4::glib::ControlFlow::Break
+                gtk4::glib::MainContext::default().spawn_local(async move {
+                    if rx.recv().await.is_ok() {
+                        window_toggle.close();
+                    }
                 });
             }
 
@@ -296,6 +254,14 @@ impl ClipboardUI {
         map.clear();
 
         if let Ok(history) = db.get_history(None) {
+            if history.is_empty() {
+                let empty_lbl = Label::new(Some("Your clipboard history is empty.\nCopy something to see it here!"));
+                empty_lbl.set_css_classes(&["clip-text"]);
+                empty_lbl.set_margin_top(40);
+                empty_lbl.set_opacity(0.6);
+                list_box.append(&empty_lbl);
+                return;
+            }
             for (i, entry) in history.into_iter().enumerate() {
                 let main_card_box = Box::new(Orientation::Horizontal, 0);
                 main_card_box.set_css_classes(&["clip-card"]);
@@ -330,12 +296,12 @@ impl ClipboardUI {
                 let controls_box = Box::new(Orientation::Vertical, 0);
                 controls_box.set_css_classes(&["card-controls"]);
                 
-                let menu_btn = Button::builder().label("🗑️").has_frame(false).build();
-                menu_btn.set_css_classes(&["card-icon-button"]);
+                let menu_btn = Button::builder().label("✕").has_frame(false).build();
+                menu_btn.set_css_classes(&["action-btn", "delete-btn"]);
                 
-                let pin_label = if entry.pinned { "📍" } else { "📌" };
+                let pin_label = if entry.pinned { "★" } else { "☆" };
                 let pin_btn = Button::builder().label(pin_label).has_frame(false).build();
-                pin_btn.set_css_classes(&["card-icon-button"]);
+                pin_btn.set_css_classes(&["action-btn", "pin-btn"]);
                 if entry.pinned {
                     pin_btn.add_css_class("pinned");
                 }
@@ -354,10 +320,35 @@ impl ClipboardUI {
                 let db_del = db.clone();
                 let list_box_del = list_box.clone();
                 let row_map_del = row_map.clone();
-                menu_btn.connect_clicked(move |_| {
-                    if let Ok(_) = db_del.delete_entry(entry_id) {
-                        Self::refresh_list(&list_box_del, db_del.clone(), &row_map_del);
-                    }
+                menu_btn.connect_clicked(move |btn| {
+                    // Walk up widget tree to find the root ApplicationWindow
+                    let parent_window = btn.root()
+                        .and_then(|r| r.downcast::<gtk4::Window>().ok());
+
+                    let dialog = gtk4::MessageDialog::new(
+                        parent_window.as_ref(),
+                        gtk4::DialogFlags::MODAL | gtk4::DialogFlags::DESTROY_WITH_PARENT,
+                        gtk4::MessageType::Warning,
+                        gtk4::ButtonsType::None,
+                        "Delete this clip?",
+                    );
+                    dialog.set_secondary_text(Some("This action cannot be undone."));
+                    dialog.add_button("Cancel", gtk4::ResponseType::Cancel);
+                    let del_btn = dialog.add_button("Delete", gtk4::ResponseType::Accept);
+                    del_btn.add_css_class("destructive-action");
+
+                    let db_del2 = db_del.clone();
+                    let list_box_del2 = list_box_del.clone();
+                    let row_map_del2 = row_map_del.clone();
+                    dialog.connect_response(move |dlg, resp| {
+                        if resp == gtk4::ResponseType::Accept {
+                            if db_del2.delete_entry(entry_id).is_ok() {
+                                Self::refresh_list(&list_box_del2, db_del2.clone(), &row_map_del2);
+                            }
+                        }
+                        dlg.close();
+                    });
+                    dialog.show();
                 });
 
                 controls_box.append(&menu_btn);

@@ -122,22 +122,48 @@ impl Daemon {
         hex::encode(hasher.finalize())
     }
 
-    pub fn set_clipboard_from_db(&self, hash: String) {
+    pub fn set_clipboard_from_db(&self, hash: String, prev_window_id: Option<String>) {
         if let Ok(Some(entry)) = self.db.get_entry_by_hash(&hash) {
             let display = gdk4::Display::default().expect("No display");
             let clipboard = display.clipboard();
-            self.set_last_injected_hash(hash);
+            // Record this hash so the daemon's own clipboard-changed listener
+            // skips re-saving what we're about to set.
+            self.set_last_injected_hash(hash.clone());
 
             if entry.entry_type == "text" {
                 let text = String::from_utf8_lossy(&entry.content).to_string();
                 clipboard.set_text(&text);
+
+                // Paste after a short delay to let the clipboard settle, then
+                // restore focus to the previously active window and inject Ctrl+V.
+                if let Some(wid) = prev_window_id {
+                    gtk4::glib::timeout_add_local_once(
+                        std::time::Duration::from_millis(80),
+                        move || {
+                            if let Err(e) = crate::paste_handler::PasteHandler::paste(&wid) {
+                                eprintln!("Paste error: {}", e);
+                            }
+                        },
+                    );
+                }
             } else if entry.entry_type == "image" {
                 let loader = gdk_pixbuf::PixbufLoader::new();
-                if let Ok(_) = loader.write(&entry.content) {
+                if loader.write(&entry.content).is_ok() {
                     let _ = loader.close();
                     if let Some(pixbuf) = loader.pixbuf() {
                         let texture = gdk4::Texture::for_pixbuf(&pixbuf);
                         clipboard.set_texture(&texture);
+
+                        if let Some(wid) = prev_window_id {
+                            gtk4::glib::timeout_add_local_once(
+                                std::time::Duration::from_millis(80),
+                                move || {
+                                    if let Err(e) = crate::paste_handler::PasteHandler::paste(&wid) {
+                                        eprintln!("Paste error: {}", e);
+                                    }
+                                },
+                            );
+                        }
                     }
                 }
             }

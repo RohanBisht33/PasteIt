@@ -20,8 +20,8 @@ fn main() -> anyhow::Result<()> {
     let args: Vec<String> = env::args().collect();
     let db = Arc::new(Database::new()?);
     
-    // Trigger cleanup on startup
-    let _ = db.cleanup();
+    // On startup: remove all unpinned entries (they don't survive restarts)
+    let _ = db.cleanup_on_startup();
     
     let daemon = Arc::new(Daemon::new(db.clone()));
 
@@ -60,11 +60,17 @@ fn run_daemon(daemon: Arc<Daemon>) {
                 if let Ok(mut stream) = stream {
                     let mut buffer = String::new();
                     if let Ok(_) = stream.read_to_string(&mut buffer) {
+                        // Protocol: "SET:<hash>:<window_id>" or "SET:<hash>:" (no window)
                         if buffer.starts_with("SET:") {
-                            let hash = buffer[4..].to_string();
+                            let payload = &buffer[4..];
+                            let mut parts = payload.splitn(2, ':');
+                            let hash = parts.next().unwrap_or("").to_string();
+                            let wid = parts.next()
+                                .map(|s| s.trim().to_string())
+                                .filter(|s| !s.is_empty());
                             let d = daemon_socket.clone();
                             gtk4::glib::MainContext::default().spawn_local(async move {
-                                d.set_clipboard_from_db(hash);
+                                d.set_clipboard_from_db(hash, wid);
                             });
                         }
                     }
@@ -110,13 +116,13 @@ fn run_ui(db: Arc<Database>, daemon: Arc<Daemon>) {
     );
 
     // 4. Watch for Remote Toggle
-    let (tx, rx) = gtk4::glib::MainContext::channel(gtk4::glib::Priority::DEFAULT);
+    let (tx, rx) = async_channel::bounded::<()>(1);
     std::thread::spawn(move || {
         loop {
             if let Ok((mut stream, _)) = listener.accept() {
                 let mut buf = [0; 4];
                 if stream.read_exact(&mut buf).is_ok() && &buf == b"QUIT" {
-                    let _ = tx.send(());
+                    let _ = tx.send_blocking(());
                     break;
                 }
             }

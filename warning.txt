@@ -1,0 +1,20 @@
+ai@ai-studio:/media/ai/Storage/Paste!t$ cargo run
+warning: use of deprecated associated function `gtk4::glib::main_context_channel::<impl gtk4::glib::MainContext>::channel`: Use an async channel, from async-channel for example, on the main context using spawn_future_local() instead
+  --> src/ui.rs:53:63
+   |
+53 | ...   let (show_tx, show_rx) = gtk4::glib::MainContext::channel(gtk4::gl...
+   |                                                         ^^^^^^^
+   |
+   = note: `#[warn(deprecated)]` on by default
+
+warning: use of deprecated associated function `gtk4::glib::main_context_channel::<impl gtk4::glib::MainContext>::channel`: Use an async channel, from async-channel for example, on the main context using spawn_future_local() instead
+   --> src/main.rs:119:45
+    |
+119 |     let (tx, rx) = gtk4::glib::MainContext::channel(gtk4::glib::Priorit...
+    |                                             ^^^^^^^
+
+warning: `paste-it` (bin "paste-it") generated 2 warnings
+    Finished dev [unoptimized + debuginfo] target(s) in 12.38s
+     Running `target/debug/paste-it`
+
+(process:15077): Gtk-WARNING **: 00:15:15.093: Unknown key gtk-modules in /home/ai/.config/gtk-4.0/settings.ini
